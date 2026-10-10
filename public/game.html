@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚔️ Battle Royal - Accessible Gaming Arena</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            overflow: hidden;
+            line-height: 1.6;
+        }
+
+        .screen {
+            display: none;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 10;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* LOGIN SCREEN */
+        #login {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .login-box {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 50px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+        }
+
+        .login-box h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .login-box p {
+            margin-bottom: 30px;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1em;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: scale(1.02);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* GAME SCREEN */
+        #game {
+            flex-direction: row;
+            background: #000;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .game-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background: #1a1a2e;
+            border: 3px solid #4CAF50;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            min-height: 400px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            font-size: 0.9em;
+        }
+
+        .status-item {
+            text-align: center;
+        }
+
+        .status-item strong {
+            display: block;
+            color: #4CAF50;
+            font-size: 1.1em;
+        }
+
+        .status-item span {
+            display: block;
+            font-size: 1.2em;
+            color: #fff;
+            margin-top: 5px;
+        }
+
+        .info-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #666;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 0.9em;
+        }
+
+        .controls-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .key-combo {
+            background: #333;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border-left: 3px solid #4CAF50;
+        }
+
+        .sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+            max-height: 100%;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #666;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+        }
+
+        .panel h3 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #666;
+            padding-bottom: 10px;
+            font-size: 1em;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 0.9em;
+        }
+
+        .message {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(100, 100, 100, 0.2);
+            border-left: 3px solid #4CAF50;
+            border-radius: 3px;
+            word-break: break-word;
+        }
+
+        .message strong {
+            color: #4CAF50;
+        }
+
+        .message.system {
+            border-left-color: #ff9800;
+            font-style: italic;
+        }
+
+        .message.announce {
+            border-left-color: #f44336;
+            font-weight: bold;
+        }
+
+        .player-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(100, 150, 200, 0.2);
+            border-left: 3px solid #4CAF50;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .player-item.dead {
+            opacity: 0.5;
+            border-left-color: #f44336;
+        }
+
+        .health-bar {
+            width: 60px;\n            height: 4px;\n            background: #333;\n            border-radius: 2px;\n            overflow: hidden;\n        }\n\n        .health-fill {\n            height: 100%;\n            background: #4CAF50;\n            width: 100%;\n        }\n\n        .chat-box {\n            display: flex;\n            flex-direction: column;\n            gap: 10px;\n        }\n\n        .chat-input {\n            display: flex;\n            gap: 5px;\n        }\n\n        .chat-input input {\n            flex: 1;\n            padding: 8px;\n            background: rgba(255, 255, 255, 0.1);\n            border: 1px solid #666;\n            color: white;\n            border-radius: 5px;\n            font-size: 0.9em;\n        }\n\n        .chat-input select {\n            padding: 8px;\n            background: rgba(255, 255, 255, 0.1);\n            border: 1px solid #666;\n            color: white;\n            border-radius: 5px;\n            font-size: 0.85em;\n        }\n\n        .btn-small {\n            padding: 8px 12px;\n            font-size: 0.85em;\n            width: auto;\n        }\n\n        .game-over {\n            position: fixed;\n            top: 50%;\n            left: 50%;\n            transform: translate(-50%, -50%);\n            background: rgba(0, 0, 0, 0.9);\n            padding: 40px;\n            border-radius: 15px;\n            border: 3px solid #f44336;\n            text-align: center;\n            z-index: 1000;\n            display: none;\n        }\n\n        .game-over.show {\n            display: block;\n        }\n\n        .game-over h1 {\n            font-size: 2.5em;\n            color: #f44336;\n            margin-bottom: 20px;\n        }\n\n        @media (max-width: 1000px) {\n            #game {\n                flex-direction: column;\n            }\n            .sidebar {\n                width: 100%;\n                max-height: 200px;\n            }\n            .status-bar {\n                grid-template-columns: repeat(2, 1fr);\n            }\n        }\n    </style>\n</head>\n<body>\n    <!-- LOGIN SCREEN -->\n    <div id=\"login\" class=\"screen active\">\n        <div class=\"login-box\">\n            <h1>⚔️ BATTLE ROYAL</h1>\n            <p>Accessible Gaming Arena</p>\n            <form id=\"loginForm\">\n                <div class=\"form-group\">\n                    <label for=\"playerName\">Player Name:</label>\n                    <input type=\"text\" id=\"playerName\" placeholder=\"Enter your name\" required autofocus>\n                </div>\n                <div class=\"form-group\">\n                    <label for=\"teamSelect\">Team:</label>\n                    <select id=\"teamSelect\">\n                        <option value=\"solo\">Solo</option>\n                        <option value=\"red\">Red Team</option>\n                        <option value=\"blue\">Blue Team</option>\n                    </select>\n                </div>\n                <button type=\"submit\">JOIN BATTLE</button>\n            </form>\n        </div>\n    </div>\n\n    <!-- GAME SCREEN -->\n    <div id=\"game\" class=\"screen\">\n        <div class=\"game-main\">\n            <div class=\"canvas-container\">\n                <canvas id=\"gameCanvas\"></canvas>\n            </div>\n\n            <div class=\"status-bar\">\n                <div class=\"status-item\">\n                    <strong>❤️ Health</strong>\n                    <span id=\"health\">100/100</span>\n                </div>\n                <div class=\"status-item\">\n                    <strong>📍 Position</strong>\n                    <span id=\"position\">0,0</span>\n                </div>\n                <div class=\"status-item\">\n                    <strong>👥 Players</strong>\n                    <span id=\"players-alive\">0</span>\n                </div>\n                <div class=\"status-item\">\n                    <strong>⚔️ Kills</strong>\n                    <span id=\"kills\">0</span>\n                </div>\n            </div>\n\n            <div class=\"info-panel\">\n                <div class=\"controls-info\">\n                    <div class=\"key-combo\">↑↓←→ Move</div>\n                    <div class=\"key-combo\">SPACE Attack</div>\n                    <div class=\"key-combo\">T Team Chat</div>\n                    <div class=\"key-combo\">G Global Chat</div>\n                    <div class=\"key-combo\">V Voice</div>\n                </div>\n            </div>\n        </div>\n\n        <div class=\"sidebar\">\n            <!-- Players Panel -->\n            <div class=\"panel\">\n                <h3>👥 Players Online</h3>\n                <div class=\"panel-content\" id=\"players-list\"></div>\n            </div>\n\n            <!-- Chat Panel -->\n            <div class=\"panel\">\n                <h3>💬 Chat</h3>\n                <div class=\"panel-content\" id=\"chat-messages\"></div>\n                <div class=\"chat-box\">\n                    <div class=\"chat-input\">\n                        <input type=\"text\" id=\"chatInput\" placeholder=\"Type message...\">\n                        <select id=\"chatType\">\n                            <option value=\"global\">Global</option>\n                            <option value=\"team\">Team</option>\n                        </select>\n                        <button class=\"btn-small\" onclick=\"sendChat()\">Send</button>\n                    </div>\n                </div>\n            </div>\n        </div>\n    </div>\n\n    <!-- GAME OVER -->\n    <div id=\"gameOver\" class=\"game-over\">\n        <h1 id=\"gameOverText\">GAME OVER</h1>\n        <p id=\"gameOverReason\"></p>\n        <button onclick=\"location.reload()\" style=\"max-width: 200px; margin: 20px auto 0;\">PLAY AGAIN</button>\n    </div>\n\n    <script>\n        // ==================== GAME CONFIG ====================\n        const CONFIG = {\n            ARENA_SIZE: 200,\n            INITIAL_ZONE_RADIUS: 80,\n            ZONE_SHRINK_INTERVAL: 30000,\n            ZONE_SHRINK_FACTOR: 0.75,\n            DAMAGE_OUTSIDE_ZONE: 2,\n            ATTACK_RANGE: 15,\n            ATTACK_DAMAGE: 25,\n            MOVE_SPEED: 3,\n            PLAYER_RADIUS: 5\n        };\n\n        // ==================== GAME STATE ====================\n        const gameState = {\n            players: new Map(),\n            currentPlayer: null,\n            match: {\n                status: 'waiting',\n                zone: { center: { x: 100, y: 100 }, radius: 80 },\n                round: 0\n            },\n            keys: {},\n            chatMessages: [],\n            gameActive: true\n        };\n\n        // ==================== GAME OBJECTS ====================\n        class Player {\n            constructor(id, name, team) {\n                this.id = id;\n                this.name = name;\n                this.team = team;\n                this.health = 100;\n                this.position = {\n                    x: Math.random() * CONFIG.ARENA_SIZE * 0.8 + 20,\n                    y: Math.random() * CONFIG.ARENA_SIZE * 0.8 + 20\n                };\n                this.status = 'alive';\n                this.kills = 0;\n                this.lastAttackTime = 0;\n            }\n\n            draw(ctx, playerPos, scale) {\n                const screenX = (this.position.x - playerPos.x) * scale + ctx.canvas.width / 2;\n                const screenY = (this.position.y - playerPos.y) * scale + ctx.canvas.height / 2;\n\n                if (this.status === 'dead') {\n                    ctx.fillStyle = 'rgba(244, 67, 54, 0.3)';\n                } else if (this.id === gameState.currentPlayer.id) {\n                    ctx.fillStyle = '#4CAF50';\n                } else {\n                    ctx.fillStyle = this.team === 'red' ? '#f44336' : this.team === 'blue' ? '#2196F3' : '#FF9800';\n                }\n\n                ctx.beginPath();\n                ctx.arc(screenX, screenY, CONFIG.PLAYER_RADIUS, 0, Math.PI * 2);\n                ctx.fill();\n\n                ctx.fillStyle = '#fff';\n                ctx.font = '10px Arial';\n                ctx.textAlign = 'center';\n                ctx.fillText(this.name.substring(0, 3), screenX, screenY - 15);\n                ctx.fillText(`${this.health}`, screenX, screenY + 15);\n            }\n\n            distanceTo(other) {\n                const dx = this.position.x - other.position.x;\n                const dy = this.position.y - other.position.y;\n                return Math.sqrt(dx * dx + dy * dy);\n            }\n        }\n\n        // ==================== INITIALIZATION ====================\n        function init() {\n            document.getElementById('loginForm').addEventListener('submit', handleLogin);\n            document.getElementById('chatInput').addEventListener('keypress', (e) => {\n                if (e.key === 'Enter') sendChat();\n            });\n\n            window.addEventListener('keydown', handleKeyDown);\n            window.addEventListener('keyup', handleKeyUp);\n\n            gameLoop();\n        }\n\n        // ==================== LOGIN ====================\n        function handleLogin(e) {\n            e.preventDefault();\n            const name = document.getElementById('playerName').value;\n            const team = document.getElementById('teamSelect').value;\n\n            gameState.currentPlayer = new Player('local-' + Date.now(), name, team);\n            gameState.players.set(gameState.currentPlayer.id, gameState.currentPlayer);\n\n            document.getElementById('login').classList.remove('active');\n            document.getElementById('game').classList.add('active');\n\n            addChatMessage('SYSTEM', `${name} joined the arena!`, 'system');\n            speak(`Welcome ${name}. Battle started.`);\n            startMatch();\n        }\n\n        // ==================== KEYBOARD ====================\n        function handleKeyDown(e) {\n            gameState.keys[e.key.toUpperCase()] = true;\n\n            if (e.key.toUpperCase() === 'T') {\n                document.getElementById('chatType').value = 'team';\n                document.getElementById('chatInput').focus();\n            } else if (e.key.toUpperCase() === 'G') {\n                document.getElementById('chatType').value = 'global';\n                document.getElementById('chatInput').focus();\n            } else if (e.key.toUpperCase() === 'V') {\n                speak('Voice chat not implemented yet');\n            } else if (e.key === ' ') {\n                attackNearest();\n                e.preventDefault();\n            }\n        }\n\n        function handleKeyUp(e) {\n            gameState.keys[e.key.toUpperCase()] = false;\n        }\n\n        // ==================== MOVEMENT ====================\n        function updatePlayerMovement() {\n            const player = gameState.currentPlayer;\n            let dx = 0, dy = 0;\n\n            if (gameState.keys['ARROWUP']) dy -= CONFIG.MOVE_SPEED;\n            if (gameState.keys['ARROWDOWN']) dy += CONFIG.MOVE_SPEED;\n            if (gameState.keys['ARROWLEFT']) dx -= CONFIG.MOVE_SPEED;\n            if (gameState.keys['ARROWRIGHT']) dx += CONFIG.MOVE_SPEED;\n\n            if (dx !== 0 || dy !== 0) {\n                player.position.x = Math.max(0, Math.min(CONFIG.ARENA_SIZE, player.position.x + dx));\n                player.position.y = Math.max(0, Math.min(CONFIG.ARENA_SIZE, player.position.y + dy));\n\n                // Zone damage\n                const distance = Math.sqrt(\n                    Math.pow(player.position.x - gameState.match.zone.center.x, 2) +\n                    Math.pow(player.position.y - gameState.match.zone.center.y, 2)\n                );\n\n                if (distance > gameState.match.zone.radius) {\n                    player.health -= CONFIG.DAMAGE_OUTSIDE_ZONE;\n                    if (player.health <= 0) {\n                        player.status = 'dead';\n                        endGame(`YOU DIED - Zone Damage!`);\n                    }\n                }\n            }\n        }\n\n        // ==================== COMBAT ====================\n        function attackNearest() {\n            const player = gameState.currentPlayer;\n            if (player.status !== 'alive' || Date.now() - player.lastAttackTime < 500) return;\n\n            let nearest = null;\n            let nearestDist = CONFIG.ATTACK_RANGE;\n\n            gameState.players.forEach(p => {\n                if (p.id !== player.id && p.status === 'alive') {\n                    const dist = player.distanceTo(p);\n                    if (dist < nearestDist) {\n                        nearest = p;\n                        nearestDist = dist;\n                    }\n                }\n            });\n\n            if (nearest) {\n                nearest.health -= CONFIG.ATTACK_DAMAGE;\n                player.lastAttackTime = Date.now();\n                player.kills++;\n\n                addChatMessage('ANNOUNCE', `HIT! ${nearest.name} took ${CONFIG.ATTACK_DAMAGE} damage!`, 'announce');\n                speak(`Hit ${nearest.name}`);\n\n                if (nearest.health <= 0) {\n                    nearest.status = 'dead';\n                    addChatMessage('SYSTEM', `${player.name} eliminated ${nearest.name}!`, 'system');\n                    speak(`${nearest.name} eliminated!`);\n                }\n            } else {\n                speak('No target in range');\n            }\n        }\n\n        // ==================== ZONE SHRINKING ====================\n        function startMatch() {\n            gameState.match.status = 'active';\n            setInterval(() => {\n                gameState.match.zone.radius *= CONFIG.ZONE_SHRINK_FACTOR;\n                gameState.match.round++;\n\n                if (gameState.match.zone.radius > 5) {\n                    addChatMessage('SYSTEM', `⚠️ Zone shrinking! New radius: ${gameState.match.zone.radius.toFixed(1)}m`, 'system');\n                    speak(`Zone shrinking to ${gameState.match.zone.radius.toFixed(1)} meters`);\n                } else {\n                    // Find survivor\n                    let survivor = null;\n                    gameState.players.forEach(p => {\n                        if (p.status === 'alive') survivor = p;\n                    });\n                    if (survivor) {\n                        endGame(`${survivor.name} WON!`);\n                    }\n                }\n            }, CONFIG.ZONE_SHRINK_INTERVAL);\n        }\n\n        // ==================== GAME END ====================\n        function endGame(reason) {\n            gameState.gameActive = false;\n            document.getElementById('gameOverText').textContent = reason;\n            document.getElementById('gameOverReason').textContent = `Your Kills: ${gameState.currentPlayer.kills}`;\n            document.getElementById('gameOver').classList.add('show');\n            speak(reason);\n        }\n\n        // ==================== CHAT ====================\n        function sendChat() {\n            const input = document.getElementById('chatInput');\n            const type = document.getElementById('chatType').value;\n            if (input.value.trim()) {\n                addChatMessage(gameState.currentPlayer.name, input.value, type);\n                input.value = '';\n            }\n        }\n\n        function addChatMessage(name, msg, type) {\n            const chatDiv = document.getElementById('chat-messages');\n            const div = document.createElement('div');\n            div.className = `message ${type}`;\n            div.innerHTML = `<strong>${name}:</strong> ${msg}`;\n            chatDiv.appendChild(div);\n            chatDiv.scrollTop = chatDiv.scrollHeight;\n            gameState.chatMessages.push({ name, msg, type });\n        }\n\n        // ==================== UI UPDATES ====================\n        function updateUI() {\n            const player = gameState.currentPlayer;\n            document.getElementById('health').textContent = `${player.health}/100`;\n            document.getElementById('position').textContent = `${player.position.x.toFixed(0)},${player.position.y.toFixed(0)}`;\n            document.getElementById('kills').textContent = player.kills;\n\n            const alive = Array.from(gameState.players.values()).filter(p => p.status === 'alive').length;\n            document.getElementById('players-alive').textContent = alive;\n\n            // Players list\n            const list = document.getElementById('players-list');\n            list.innerHTML = '';\n            gameState.players.forEach(p => {\n                const div = document.createElement('div');\n                div.className = `player-item ${p.status === 'dead' ? 'dead' : ''}`;\n                div.innerHTML = `\n                    <span>${p.name} (${p.team})</span>\n                    <div class=\"health-bar\"><div class=\"health-fill\" style=\"width: ${p.health}%\"></div></div>\n                    <span>${p.health}</span>\n                `;\n                list.appendChild(div);\n            });\n        }\n\n        // ==================== RENDERING ====================\n        function render() {\n            const canvas = document.getElementById('gameCanvas');\n            const ctx = canvas.getContext('2d');\n            const player = gameState.currentPlayer;\n\n            canvas.width = canvas.offsetWidth;\n            canvas.height = canvas.offsetHeight;\n\n            const scale = Math.min(canvas.width, canvas.height) / CONFIG.ARENA_SIZE;\n            const centerX = canvas.width / 2;\n            const centerY = canvas.height / 2;\n\n            // Background\n            ctx.fillStyle = '#1a1a2e';\n            ctx.fillRect(0, 0, canvas.width, canvas.height);\n\n            // Arena bounds\n            ctx.strokeStyle = '#666';\n            ctx.lineWidth = 2;\n            ctx.strokeRect(\n                centerX - player.position.x * scale,\n                centerY - player.position.y * scale,\n                CONFIG.ARENA_SIZE * scale,\n                CONFIG.ARENA_SIZE * scale\n            );\n\n            // Zone\n            ctx.strokeStyle = 'rgba(76, 175, 80, 0.5)';\n            ctx.lineWidth = 3;\n            ctx.beginPath();\n            ctx.arc(\n                centerX + (gameState.match.zone.center.x - player.position.x) * scale,\n                centerY + (gameState.match.zone.center.y - player.position.y) * scale,\n                gameState.match.zone.radius * scale,\n                0,\n                Math.PI * 2\n            );\n            ctx.stroke();\n\n            // Players\n            gameState.players.forEach(p => {\n                p.draw(ctx, player.position, scale);\n            });\n\n            // Current player marker\n            ctx.fillStyle = '#4CAF50';\n            ctx.beginPath();\n            ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);\n            ctx.fill();\n        }\n\n        // ==================== ACCESSIBILITY ====================\n        function speak(text) {\n            const utterance = new SpeechSynthesisUtterance(text);\n            utterance.rate = 0.9;\n            speechSynthesis.speak(utterance);\n        }\n\n        // ==================== GAME LOOP ====================\n        function gameLoop() {\n            if (gameState.gameActive) {\n                updatePlayerMovement();\n                updateUI();\n                render();\n            }\n            requestAnimationFrame(gameLoop);\n        }\n\n        // Start game\n        window.addEventListener('DOMContentLoaded', init);\n    </script>\n</body>\n</html>\n
