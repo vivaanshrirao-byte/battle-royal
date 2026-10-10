@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle Royal - Accessible Arena</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+            width: 100%;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* Login Screen */
+        #login-screen {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .login-form {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 40px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-form h1 {
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #667eea;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 16px;
+        }
+
+        .form-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+            transform: scale(1.05);
+        }
+
+        button:focus {
+            outline: 3px solid #4CAF50;
+        }
+
+        /* Game Screen */
+        #game-screen {
+            flex-direction: row;
+            background: #000;
+        }
+
+        .game-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .status-panel {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            font-size: 18px;
+        }
+
+        .status-item {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .status-item strong {
+            color: #4CAF50;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #666;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .controls h3 {
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+
+        .key {
+            display: inline-block;
+            background: #333;
+            border: 1px solid #666;
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+
+        .sidebar {
+            width: 300px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #666;
+            border-radius: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            max-height: 300px;
+        }
+
+        .panel h3 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #666;
+            padding-bottom: 10px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(100, 100, 100, 0.2);
+            border-left: 3px solid #4CAF50;
+            border-radius: 3px;
+            word-break: break-word;
+        }
+
+        .message strong {
+            color: #4CAF50;
+        }
+
+        .message.system {
+            border-left-color: #ff9800;
+            font-style: italic;
+        }
+
+        .message.enemy {
+            border-left-color: #f44336;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #666;
+            color: white;
+            border-radius: 5px;
+        }
+
+        .chat-input select {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #666;
+            color: white;
+            border-radius: 5px;
+        }
+
+        .player-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .player-item {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(100, 150, 200, 0.2);
+            border-radius: 3px;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .player-item.alive {
+            border-left: 3px solid #4CAF50;
+        }
+
+        .player-item.dead {
+            border-left: 3px solid #f44336;
+            opacity: 0.6;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-buttons button {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+        }
+
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        [aria-live] {
+            position: relative;
+        }
+
+        @media (max-width: 800px) {
+            .container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="screen active">
+        <div class="login-form">
+            <h1>⚔️ Battle Royal</h1>
+            <p>Accessible Gaming Arena for Blind Players</p>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="playerName">Your Name:</label>
+                    <input type="text" id="playerName" placeholder="Enter your player name" required>
+                </div>
+                <div class="form-group">
+                    <label for="teamSelect">Team (Optional):</label>
+                    <select id="teamSelect">
+                        <option value="solo">Solo</option>
+                        <option value="red">Red Team</option>
+                        <option value="blue">Blue Team</option>
+                        <option value="green">Green Team</option>
+                    </select>
+                </div>
+                <button type="submit">Join Battle Arena</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+        <div class="game-area">
+            <div class="status-panel" role="region" aria-label="Game status" aria-live="polite">
+                <div class="status-item">
+                    <strong>Health:</strong>
+                    <span id="health">100/100</span>
+                </div>
+                <div class="status-item">
+                    <strong>Position:</strong>
+                    <span id="position">Loading...</span>
+                </div>
+                <div class="status-item">
+                    <strong>Players Alive:</strong>
+                    <span id="alive-count">0</span>
+                </div>
+                <div class="status-item">
+                    <strong>Kills:</strong>
+                    <span id="kills">0</span>
+                </div>
+                <div class="status-item">
+                    <strong>Zone Status:</strong>
+                    <span id="zone-status">Safe</span>
+                </div>
+            </div>
+
+            <div class="controls">
+                <h3>Controls</h3>
+                <div>
+                    <span class="key">↑ ↓ ← →</span> Move
+                </div>
+                <div>
+                    <span class="key">Space</span> Attack nearby
+                </div>
+                <div>
+                    <span class="key">V</span> Voice Chat
+                </div>
+                <div>
+                    <span class="key">T</span> Team Chat
+                </div>
+                <div>
+                    <span class="key">G</span> Global Chat
+                </div>
+                <div>
+                    <span class="key">M</span> Mute Microphone
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <!-- Players Online -->
+            <div class="panel">
+                <h3>👥 Players Online</h3>
+                <div class="player-list" id="players-list"></div>
+            </div>
+
+            <!-- Chat Messages -->
+            <div class="panel">
+                <h3>💬 Chat</h3>
+                <div id="chat-messages" role="log" aria-label="Chat messages" aria-live="polite"></div>
+                <div class="chat-input">
+                    <input type="text" id="chat-input" placeholder="Type message..." aria-label="Chat input">
+                    <select id="chat-type" aria-label="Chat type">
+                        <option value="global">Global</option>
+                        <option value="team">Team</option>
+                    </select>
+                    <button onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+
+            <!-- Voice Controls -->
+            <div class="panel">
+                <h3>🎤 Voice</h3>
+                <div class="action-buttons">
+                    <button id="voice-toggle" onclick="toggleVoice()">Enable Voice</button>
+                    <button id="mute-toggle" onclick="toggleMute()">Mute</button>
+                </div>
+                <div id="voice-status" style="margin-top: 10px; font-size: 12px; color: #4CAF50;">Ready</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        let currentPlayer = null;
+        let allPlayers = new Map();
+        let voiceEnabled = false;
+        let isMuted = false;
+        const MOVE_SPEED = 2;
+
+        // Login
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const playerName = document.getElementById('playerName').value;
+            const team = document.getElementById('teamSelect').value;
+
+            socket.emit('player:join', { playerName, team });
+            currentPlayer = { name: playerName, team };
+
+            document.getElementById('login-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
+            announceText(`Welcome ${playerName} to Battle Royal Arena.`);
+        });
+
+        // Socket events
+        socket.on('player:joined', (data) => {
+            const listItem = document.createElement('div');
+            listItem.className = 'player-item alive';
+            listItem.id = `player-${data.playerId}`;
+            listItem.innerHTML = `<span>${data.playerName}</span><span>🟢</span>`;
+            document.getElementById('players-list').appendChild(listItem);
+            updateAliveCount();
+        });
+
+        socket.on('player:left', (data) => {
+            const item = document.getElementById(`player-${data.playerId}`);
+            if (item) item.remove();
+            updateAliveCount();
+        });
+
+        socket.on('player:eliminated', (data) => {
+            const item = document.getElementById(`player-${data.playerId}`);
+            if (item) {
+                item.classList.remove('alive');
+                item.classList.add('dead');
+                item.innerHTML = item.innerHTML.replace('🟢', '❌');
+            }
+            announceText(`${data.playerName} has been eliminated.`);
+            updateAliveCount();
+        });
+
+        socket.on('chat:message', (data) => {
+            const chatDiv = document.getElementById('chat-messages');
+            const msg = document.createElement('div');
+            msg.className = 'message';
+            msg.innerHTML = `<strong>${data.playerName}:</strong> ${data.message}`;
+            chatDiv.appendChild(msg);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+            announceText(`${data.playerName}: ${data.message}`);
+        });
+
+        socket.on('game:playerMoved', (data) => {
+            const pos = data.position;
+            document.getElementById('position').textContent = `(${pos.x.toFixed(1)}, ${pos.y.toFixed(1)})`;
+        });
+
+        socket.on('game:hit', (data) => {
+            announceText(`${data.damage} damage hit. Remaining health ${data.remainingHealth}`);
+            playSound('hit');
+        });
+
+        socket.on('ui:announcement', (text) => {
+            announceText(text);
+            const chatDiv = document.getElementById('chat-messages');
+            const msg = document.createElement('div');
+            msg.className = 'message system';
+            msg.textContent = text;
+            chatDiv.appendChild(msg);
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        });
+
+        socket.on('game:zoneUpdate', (data) => {
+            announceText(`Zone update. New radius ${data.radius.toFixed(1)}`);
+            document.getElementById('zone-status').textContent = `Shrinking (${data.radius.toFixed(1)}m)`;
+        });
+
+        socket.on('game:over', (data) => {
+            announceText(data.message);
+            setTimeout(() => {
+                location.reload();
+            }, 3000);
+        });
+
+        // Movement
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toUpperCase()] = true;
+
+            if (e.key.toUpperCase() === 'T') {
+                document.getElementById('chat-type').value = 'team';
+                document.getElementById('chat-input').focus();
+                e.preventDefault();
+            } else if (e.key.toUpperCase() === 'G') {
+                document.getElementById('chat-type').value = 'global';
+                document.getElementById('chat-input').focus();
+                e.preventDefault();
+            } else if (e.key.toUpperCase() === 'V') {
+                toggleVoice();
+                e.preventDefault();
+            } else if (e.key.toUpperCase() === 'M') {
+                toggleMute();
+                e.preventDefault();
+            } else if (e.key === ' ') {
+                socket.emit('game:attack', { targetId: 'nearest' });
+                announceText('Attacking!');
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toUpperCase()] = false;
+        });
+
+        // Game loop
+        setInterval(() => {
+            let x = 0, y = 0;
+            if (keys['ARROWUP']) y -= MOVE_SPEED;
+            if (keys['ARROWDOWN']) y += MOVE_SPEED;
+            if (keys['ARROWLEFT']) x -= MOVE_SPEED;
+            if (keys['ARROWRIGHT']) x += MOVE_SPEED;
+
+            if (x !== 0 || y !== 0) {
+                socket.emit('game:move', { x, y });
+            }
+        }, 100);
+
+        // Chat
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const type = document.getElementById('chat-type').value;
+            if (input.value.trim()) {
+                socket.emit('chat:message', { message: input.value, type });
+                input.value = '';
+            }
+        }
+
+        document.getElementById('chat-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        // Voice
+        function toggleVoice() {
+            voiceEnabled = !voiceEnabled;
+            const btn = document.getElementById('voice-toggle');
+            btn.textContent = voiceEnabled ? 'Disable Voice' : 'Enable Voice';
+            announceText(voiceEnabled ? 'Voice chat enabled' : 'Voice chat disabled');
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('mute-toggle');
+            btn.textContent = isMuted ? 'Unmute' : 'Mute';
+            announceText(isMuted ? 'Microphone muted' : 'Microphone unmuted');
+        }
+
+        // Accessibility
+        function announceText(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9;
+            speechSynthesis.speak(utterance);
+        }
+
+        function playSound(type) {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+
+            if (type === 'hit') {
+                oscillator.frequency.value = 800;
+                gain.gain.setValueAtTime(0.5, audioContext.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }
+        }
+
+        function updateAliveCount() {
+            const alive = document.querySelectorAll('.player-item.alive').length;
+            document.getElementById('alive-count').textContent = alive;
+        }
+    </script>
+</body>
+</html>
