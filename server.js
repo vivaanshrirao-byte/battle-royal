@@ -1,243 +1,113 @@
 const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
-const cors = require('cors');
 const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server, {
-  cors: { origin: '*', methods: ['GET', 'POST'] }
-});
+const io = socketIO(server, { cors: { origin: '*' } });
 
-app.use(cors());
 app.use(express.static('public'));
-app.use(express.json());
 
-// Game state
-const gameState = {
-  players: new Map(),
-  matches: new Map(),
-  chatMessages: [],
-  gameActive: false
+const CONFIG = {
+  ARENA_SIZE: 200,
+  INITIAL_ZONE_RADIUS: 80,
+  ZONE_SHRINK_INTERVAL: 30000,
+  ZONE_SHRINK_FACTOR: 0.75,
+  DAMAGE_OUTSIDE_ZONE: 2,
+  ATTACK_RANGE: 15,
+  ATTACK_DAMAGE: 25,
+  MOVE_SPEED: 3
 };
 
-// Game constants
-const ARENA_SIZE = 100;
-const ZONE_SHRINK_INTERVAL = 30000; // 30 seconds
-const INITIAL_ZONE_RADIUS = 50;
-let currentZoneRadius = INITIAL_ZONE_RADIUS;
-let zoneCenter = { x: 50, y: 50 };
-
-// Socket.IO connection
-io.on('connection', (socket) => {
-  console.log(`✅ Player connected: ${socket.id}`);
-
-  // Player joins game
-  socket.on('player:join', (data) => {
-    const player = {
-      id: socket.id,
-      name: data.playerName,
-      team: data.team || 'solo',
-      health: 100,
-      position: { x: Math.random() * ARENA_SIZE, y: Math.random() * ARENA_SIZE },
-      status: 'alive',
-      joinedAt: Date.now(),
-      kills: 0,
-      deaths: 0
-    };
-
-    gameState.players.set(socket.id, player);
-    console.log(`🎮 ${data.playerName} joined`);
-    
-    io.emit('player:joined', {
-      playerId: socket.id,
-      playerName: data.playerName,
-      team: data.team,
-      totalPlayers: gameState.players.size
-    });
-
-    // Announce to player
-    socket.emit('ui:announcement', `Welcome ${data.playerName}. ${gameState.players.size} players in arena.`);
-  });
-
-  // Player moves
-  socket.on('game:move', (data) => {
-    const player = gameState.players.get(socket.id);
-    if (player && player.status === 'alive') {
-      // Clamp position to arena
-      player.position.x = Math.max(0, Math.min(ARENA_SIZE, data.x));
-      player.position.y = Math.max(0, Math.min(ARENA_SIZE, data.y));
-
-      // Check if in zone
-      const distance = Math.sqrt(
-        Math.pow(player.position.x - zoneCenter.x, 2) + 
-        Math.pow(player.position.y - zoneCenter.y, 2)
-      );
-
-      if (distance > currentZoneRadius) {
-        player.health -= 1; // Zone damage
-        socket.emit('ui:announcement', `Taking zone damage. Health: ${player.health}`);
-      }
-
-      if (player.health <= 0) {
-        player.status = 'dead';
-        socket.emit('ui:announcement', 'You have been eliminated!');
-        io.emit('player:eliminated', { playerId: socket.id, playerName: player.name });
-      }
-
-      // Broadcast movement
-      io.emit('game:playerMoved', {
-        playerId: socket.id,
-        position: player.position
-      });
-    }
-  });
-
-  // Player attacks
-  socket.on('game:attack', (data) => {
-    const attacker = gameState.players.get(socket.id);
-    const target = gameState.players.get(data.targetId);
-
-    if (attacker && target && target.status === 'alive') {
-      const distance = Math.sqrt(
-        Math.pow(attacker.position.x - target.position.x, 2) +
-        Math.pow(attacker.position.y - target.position.y, 2)
-      );
-
-      if (distance < 5) {
-        const damage = 25;
-        target.health -= damage;
-        attacker.kills++;
-
-        io.emit('game:hit', {
-          attackerId: socket.id,
-          targetId: data.targetId,
-          damage: damage,
-          remainingHealth: target.health
-        });
-
-        socket.emit('ui:announcement', `Hit! ${damage} damage dealt.`);
-        io.to(data.targetId).emit('ui:announcement', `You took ${damage} damage. Health: ${target.health}`);
-
-        if (target.health <= 0) {
-          target.status = 'dead';
-          attacker.kills++;
-          socket.emit('ui:announcement', `${target.name} eliminated!`);
-          io.emit('player:eliminated', { playerId: data.targetId, playerName: target.name });
-        }
-      } else {
-        socket.emit('ui:announcement', 'Target too far away');
-      }
-    }
-  });
-
-  // Text chat
-  socket.on('chat:message', (data) => {
-    const player = gameState.players.get(socket.id);
-    if (player) {
-      const message = {
-        playerId: socket.id,
-        playerName: player.name,
-        message: data.message,
-        type: data.type,
-        timestamp: Date.now()
-      };
-
-      gameState.chatMessages.push(message);
-
-      if (data.type === 'global') {
-        io.emit('chat:message', message);
-        console.log(`💬 [GLOBAL] ${player.name}: ${data.message}`);
-      } else if (data.type === 'team' && player.team) {
-        io.to(`team:${player.team}`).emit('chat:message', message);
-        console.log(`💬 [TEAM] ${player.name}: ${data.message}`);
-      }
-    }
-  });
-
-  // Voice chat offer
-  socket.on('voice:offer', (data) => {
-    io.to(data.targetId).emit('voice:offer', {
-      fromId: socket.id,
-      offer: data.offer
-    });
-  });
-
-  // Voice chat answer
-  socket.on('voice:answer', (data) => {
-    io.to(data.targetId).emit('voice:answer', {
-      fromId: socket.id,
-      answer: data.answer
-    });
-  });
-
-  // ICE candidate
-  socket.on('voice:ice-candidate', (data) => {
-    io.to(data.targetId).emit('voice:ice-candidate', {
-      fromId: socket.id,
-      candidate: data.candidate
-    });
-  });
-
-  // Disconnect
-  socket.on('disconnect', () => {
-    const player = gameState.players.get(socket.id);
-    if (player) {
-      gameState.players.delete(socket.id);
-      io.emit('player:left', { playerId: socket.id, playerName: player.name });
-      console.log(`❌ ${player.name} disconnected`);
-    }
-  });
-});
-
-// Zone shrink every 30 seconds
-setInterval(() => {
-  currentZoneRadius *= 0.8; // Reduce radius by 20%
-  
-  if (currentZoneRadius > 5) {
-    io.emit('game:zoneUpdate', {
-      center: zoneCenter,
-      radius: currentZoneRadius
-    });
-    io.emit('ui:announcement', `Zone shrinking! New radius: ${currentZoneRadius.toFixed(1)}`);
-    console.log(`📍 Zone shrunk to radius: ${currentZoneRadius.toFixed(1)}`);
-  } else {
-    // Game over
-    io.emit('game:over', { message: 'Match complete!' });
-    gameState.players.clear();
-    currentZoneRadius = INITIAL_ZONE_RADIUS;
+const gameState = {
+  players: new Map(),
+  match: {
+    status: 'active',
+    zone: { center: { x: 100, y: 100 }, radius: 80 },
+    round: 0
   }
-}, ZONE_SHRINK_INTERVAL);
+};
 
-// REST endpoints
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    players: gameState.players.size,
-    zone: { center: zoneCenter, radius: currentZoneRadius }
+class Player {
+  constructor(id, name, team) {
+    this.id = id;
+    this.name = name;
+    this.team = team;
+    this.health = 100;
+    this.position = { x: Math.random() * 160 + 20, y: Math.random() * 160 + 20 };
+    this.status = 'alive';
+    this.kills = 0;
+    this.lastAttack = 0;
+  }
+
+  distanceTo(p) {
+    const dx = this.position.x - p.position.x;
+    const dy = this.position.y - p.position.y;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  isInZone(zone) {
+    const dx = this.position.x - zone.center.x;
+    const dy = this.position.y - zone.center.y;
+    return Math.sqrt(dx * dx + dy * dy) <= zone.radius;
+  }
+}
+
+io.on('connection', (socket) => {
+  console.log(`✅ ${socket.id} connected`);
+
+  socket.on('join', (data) => {
+    const player = new Player(socket.id, data.name, data.team || 'solo');
+    gameState.players.set(socket.id, player);
+    io.emit('playerJoined', { id: socket.id, name: data.name, team: player.team, total: gameState.players.size });
+    socket.emit('speak', `Welcome ${data.name}. ${gameState.players.size} players in arena.`);
   });
+
+  socket.on('move', (data) => {
+    const p = gameState.players.get(socket.id);
+    if (!p || p.status !== 'alive') return;
+    p.position.x = Math.max(0, Math.min(CONFIG.ARENA_SIZE, p.position.x + data.dx * CONFIG.MOVE_SPEED));
+    p.position.y = Math.max(0, Math.min(CONFIG.ARENA_SIZE, p.position.y + data.dy * CONFIG.MOVE_SPEED));
+    if (!p.isInZone(gameState.match.zone)) {
+      p.health = Math.max(0, p.health - CONFIG.DAMAGE_OUTSIDE_ZONE);
+      if (p.health === 0) { p.status = 'dead'; io.emit('died', { id: socket.id, name: p.name }); }
+    }
+    io.emit('move', { id: socket.id, pos: p.position, health: p.health });
+  });
+
+  socket.on('attack', (data) => {
+    const attacker = gameState.players.get(socket.id);
+    const target = gameState.players.get(data.target);
+    if (!attacker || !target || attacker.status !== 'alive' || target.status !== 'alive') return;
+    if (Date.now() - attacker.lastAttack < 500) return;
+    if (attacker.distanceTo(target) > CONFIG.ATTACK_RANGE) return;
+    target.health = Math.max(0, target.health - CONFIG.ATTACK_DAMAGE);
+    attacker.lastAttack = Date.now();
+    io.emit('hit', { attacker: attacker.name, target: target.name, damage: CONFIG.ATTACK_DAMAGE, health: target.health });
+    if (target.health === 0) { target.status = 'dead'; attacker.kills++; io.emit('died', { id: data.target, name: target.name, killer: attacker.name }); }
+  });
+
+  socket.on('chat', (data) => {
+    const p = gameState.players.get(socket.id);
+    if (p) io.emit('chat', { name: p.name, msg: data.msg, type: data.type });
+  });
+
+  socket.on('disconnect', () => { gameState.players.delete(socket.id); io.emit('left', socket.id); });
 });
 
-app.get('/api/players', (req, res) => {
-  const players = Array.from(gameState.players.values()).map(p => ({
-    id: p.id,
-    name: p.name,
-    health: p.health,
-    position: p.position,
-    status: p.status
-  }));
-  res.json(players);
-});
+setInterval(() => {
+  gameState.match.zone.radius *= CONFIG.ZONE_SHRINK_FACTOR;
+  if (gameState.match.zone.radius > 5) {
+    io.emit('zone', { radius: gameState.match.zone.radius });
+    io.emit('speak', `Zone shrinking! ${gameState.match.zone.radius.toFixed(1)}m`);
+  } else {
+    const alive = Array.from(gameState.players.values()).filter(p => p.status === 'alive');
+    if (alive.length === 1) io.emit('winner', { name: alive[0].name, kills: alive[0].kills });
+  }
+}, CONFIG.ZONE_SHRINK_INTERVAL);
 
-// Serve HTML
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`\n🎮 Battle Royal Server running on http://localhost:${PORT}`);
-  console.log(`📡 WebSocket enabled`);
-  console.log(`🔊 Voice chat ready\n`);
-});
+server.listen(PORT, () => console.log(`\n⚔️ BATTLE ROYAL\n🎮 http://localhost:${PORT}\n📡 READY\n`));
